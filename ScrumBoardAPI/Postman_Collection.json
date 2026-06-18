@@ -1,0 +1,329 @@
+{
+  "info": {
+    "name": "Scrum Board API - تخته‌ی اسکراب",
+    "description": "API Tests for Scrum Board Application (Persian)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Boards",
+      "item": [
+        {
+          "name": "Get All Boards",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://localhost:7125/api/boards",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "boards"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Board",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"پروژه‌ی اول\",\n  \"description\": \"اولین تخته‌ی اسکراب برای تست\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:7125/api/boards",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "boards"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Board by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://localhost:7125/api/boards/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "boards",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Board",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"پروژه‌ی بروزرسانی‌شده\",\n  \"description\": \"توضیح جدید\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:7125/api/boards/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "boards",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Board",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "https://localhost:7125/api/boards/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "boards",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Columns",
+      "item": [
+        {
+          "name": "Get Columns by Board",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://localhost:7125/api/columns/board/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "columns",
+                "board",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Column",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"انجام می‌شود\",\n  \"position\": 0,\n  \"boardId\": 1\n}"
+            },
+            "url": {
+              "raw": "https://localhost:7125/api/columns",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "columns"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Column",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"درحال بررسی\",\n  \"position\": 1,\n  \"boardId\": 1\n}"
+            },
+            "url": {
+              "raw": "https://localhost:7125/api/columns/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "columns",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Column",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "https://localhost:7125/api/columns/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "columns",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TaskCards",
+      "item": [
+        {
+          "name": "Get Tasks by Column",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://localhost:7125/api/taskcards/column/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "taskcards",
+                "column",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create TaskCard",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"طراحی رابط\",\n  \"description\": \"رابط یوزری را برای صفحه‌ی اصلی طراحی کنید\",\n  \"priority\": \"High\",\n  \"dueDate\": \"2025-12-31T23:59:59.999Z\",\n  \"assignee\": \"احمد\",\n  \"estimate\": 4.5,\n  \"columnId\": 1\n}"
+            },
+            "url": {
+              "raw": "https://localhost:7125/api/taskcards",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "taskcards"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update TaskCard (with move)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"طراحی رابط - بروزرسانی‌شده\",\n  \"description\": \"رابط یوزری به‌روزرسانی شد\",\n  \"priority\": \"Medium\",\n  \"dueDate\": \"2025-12-31T23:59:59.999Z\",\n  \"assignee\": \"علی\",\n  \"estimate\": 3.5,\n  \"columnId\": 2\n}"
+            },
+            "url": {
+              "raw": "https://localhost:7125/api/taskcards/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "taskcards",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete TaskCard",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "https://localhost:7125/api/taskcards/1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7125",
+              "path": [
+                "api",
+                "taskcards",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

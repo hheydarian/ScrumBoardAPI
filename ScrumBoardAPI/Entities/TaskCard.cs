@@ -12,6 +12,10 @@ public class TaskCard
 
     public DateTime? DueDate { get; set; }
 
+    public string? Assignee { get; set; }
+
+    public decimal Estimate { get; set; }
+
     public int ColumnId { get; set; }
 
     // Navigation property

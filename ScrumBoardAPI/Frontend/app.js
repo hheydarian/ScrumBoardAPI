@@ -1,12 +1,12 @@
 // ========================================
-// Scrum Board Frontend Application
-// Modern Kanban Board with Drag & Drop
+// برنامه تخته‌ی اسکراب - نسخه حرفه‌ای
+// Scrum Board Frontend Application v1.0
 // ========================================
 
-// API Configuration
+// تنظیمات API
 const API_BASE_URL = 'https://localhost:7125/api';
 
-// Application State
+// وضعیت برنامه
 const appState = {
     boards: [],
     selectedBoardId: null,
@@ -14,22 +14,36 @@ const appState = {
     tasks: {},
     currentColumnForTask: null,
     currentTaskId: null,
+    filters: {
+        priority: '',
+        assignee: '',
+        status: '',
+        overdue: false
+    },
+    settings: {
+        theme: localStorage.getItem('theme') || 'dark',
+        showCompleted: JSON.parse(localStorage.getItem('showCompleted') ?? 'true'),
+        autoRefresh: JSON.parse(localStorage.getItem('autoRefresh') ?? 'true')
+    }
 };
 
-// Modal Management
+// موادال
 const modals = {
     addBoard: document.getElementById('addBoardModal'),
     addColumn: document.getElementById('addColumnModal'),
     addTask: document.getElementById('addTaskModal'),
     editTask: document.getElementById('editTaskModal'),
+    settings: document.getElementById('settingsModal'),
+    stats: document.getElementById('statsModal'),
+    filter: document.getElementById('filterModal')
 };
 
 // ========================================
-// Utility Functions
+// توابع معرفی شده
 // ========================================
 
 /**
- * Fetch wrapper with error handling
+ * تابع محافظ برای fetch API
  */
 async function fetchAPI(endpoint, options = {}) {
     try {
@@ -42,24 +56,23 @@ async function fetchAPI(endpoint, options = {}) {
         });
 
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            throw new Error(`خطا در API: ${response.status}`);
         }
 
-        // Handle 204 No Content response
         if (response.status === 204) {
             return null;
         }
 
         return await response.json();
     } catch (error) {
-        console.error('API Error:', error);
-        showNotification(`Error: ${error.message}`, 'error');
+        console.error('خطای API:', error);
+        showNotification(`خطا: ${error.message}`, 'error');
         throw error;
     }
 }
 
 /**
- * Show notification toast
+ * نمایش اعلان Toast
  */
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
@@ -70,20 +83,29 @@ function showNotification(message, type = 'success') {
 
     setTimeout(() => {
         notification.classList.remove('show');
-    }, 3000);
+    }, 3500);
 }
 
 /**
- * Format date to readable string
+ * تبدیل تاریخ به رشته‌ی خوانای فارسی
  */
 function formatDate(dateString) {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const persianMonths = ['ژانویه', 'فوریه', 'مارس', 'آپریل', 'مه', 'ژوئن', 'ژوئیه', 'اگوست', 'سپتامبر', 'اکتبر', 'نوامبر', 'دسامبر'];
+    return `${date.getDate()} ${persianMonths[date.getMonth()]}`;
 }
 
 /**
- * Open modal
+ * بررسی آیا تاریخ سررسید گذشته است
+ */
+function isOverdue(dueDate) {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date() && true;
+}
+
+/**
+ * باز کردن موادال
  */
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -93,7 +115,7 @@ function openModal(modalId) {
 }
 
 /**
- * Close modal
+ * بستن موادال
  */
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -103,40 +125,61 @@ function closeModal(modalId) {
 }
 
 /**
- * Clear form inputs
+ * پاک کردن فرم
  */
 function clearForm(formId) {
-    const inputs = document.querySelectorAll(`#${formId} input, #${formId} textarea, #${formId} select`);
-    inputs.forEach(input => {
-        input.value = '';
-    });
+    const form = document.getElementById(formId);
+    if (form) {
+        form.querySelectorAll('input, textarea, select').forEach(input => {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+        });
+    }
+}
+
+/**
+ * محافظت در برابر XSS
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 // ========================================
-// Board Management
+// مدیریت تخته‌ها
 // ========================================
 
 /**
- * Fetch all boards
+ * بارگیری تمام تخته‌ها
  */
 async function loadBoards() {
     try {
         appState.boards = await fetchAPI('/boards');
         renderBoardsList();
     } catch (error) {
-        console.error('Failed to load boards:', error);
+        console.error('خطا در بارگیری تخته‌ها:', error);
     }
 }
 
 /**
- * Render boards in sidebar
+ * نمایش تخته‌ها در sidebar
  */
 function renderBoardsList() {
     const container = document.getElementById('boardsList');
     container.innerHTML = '';
 
     if (appState.boards.length === 0) {
-        container.innerHTML = '<p class="text-muted" style="color: var(--text-tertiary); padding: 20px 0; text-align: center;">No boards yet. Create one to get started!</p>';
+        container.innerHTML = '<p style="color: var(--text-tertiary); padding: 20px; text-align: center; font-size: 13px;">هنوز تخته‌ای ایجاد نشده است</p>';
         return;
     }
 
@@ -145,7 +188,7 @@ function renderBoardsList() {
         boardElement.className = `board-item ${board.id === appState.selectedBoardId ? 'active' : ''}`;
         boardElement.innerHTML = `
             <div class="board-item-title">${escapeHtml(board.title)}</div>
-            <div class="board-item-desc">${board.description ? escapeHtml(board.description) : 'No description'}</div>
+            <div class="board-item-desc">${board.description ? escapeHtml(board.description) : 'بدون توضیح'}</div>
         `;
         boardElement.addEventListener('click', () => selectBoard(board.id));
         container.appendChild(boardElement);
@@ -153,30 +196,29 @@ function renderBoardsList() {
 }
 
 /**
- * Select a board
+ * انتخاب تخته
  */
 async function selectBoard(boardId) {
     appState.selectedBoardId = boardId;
     const selectedBoard = appState.boards.find(b => b.id === boardId);
 
-    // Update header
     document.getElementById('selectedBoardName').textContent = selectedBoard.title;
     document.getElementById('selectedBoardDesc').textContent = selectedBoard.description || '';
 
-    // Load columns
     await loadColumns();
     renderBoardsList();
+    updateStats();
 }
 
 /**
- * Create new board
+ * ایجاد تخته جدید
  */
 async function createBoard() {
     const title = document.getElementById('boardTitle').value.trim();
     const description = document.getElementById('boardDescription').value.trim();
 
     if (!title) {
-        showNotification('Please enter a board title', 'error');
+        showNotification('لطفاً نام تخته را وارد کنید', 'error');
         return;
     }
 
@@ -186,24 +228,22 @@ async function createBoard() {
             body: JSON.stringify({ title, description }),
         });
 
-        showNotification('Board created successfully!', 'success');
+        showNotification('تخته جدید با موفقیت ایجاد شد! ✅', 'success');
         closeModal('addBoardModal');
-        clearForm('addBoardModal');
+        clearForm('boardTitle');
         await loadBoards();
-
-        // Select the newly created board
         selectBoard(newBoard.id);
     } catch (error) {
-        console.error('Failed to create board:', error);
+        console.error('خطا در ایجاد تخته:', error);
     }
 }
 
 // ========================================
-// Column Management
+// مدیریت ستون‌ها
 // ========================================
 
 /**
- * Fetch columns for selected board
+ * بارگیری ستون‌های تخته
  */
 async function loadColumns() {
     if (!appState.selectedBoardId) return;
@@ -213,12 +253,12 @@ async function loadColumns() {
         await loadAllTasks();
         renderColumns();
     } catch (error) {
-        console.error('Failed to load columns:', error);
+        console.error('خطا در بارگیری ستون‌ها:', error);
     }
 }
 
 /**
- * Load all tasks for all columns
+ * بارگیری تمام تسک‌ها
  */
 async function loadAllTasks() {
     appState.tasks = {};
@@ -226,16 +266,16 @@ async function loadAllTasks() {
     for (const column of appState.columns) {
         try {
             const tasks = await fetchAPI(`/taskcards/column/${column.id}`);
-            appState.tasks[column.id] = tasks;
+            appState.tasks[column.id] = tasks || [];
         } catch (error) {
-            console.error(`Failed to load tasks for column ${column.id}:`, error);
+            console.error(`خطا در بارگیری تسک‌های ستون ${column.id}:`, error);
             appState.tasks[column.id] = [];
         }
     }
 }
 
 /**
- * Render all columns and tasks
+ * نمایش ستون‌ها و تسک‌ها
  */
 function renderColumns() {
     const container = document.getElementById('columnsContainer');
@@ -245,7 +285,7 @@ function renderColumns() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">📌</div>
-                <p class="empty-text">Select a board to get started</p>
+                <p class="empty-text">یک تخته انتخاب کنید تا شروع کنید</p>
             </div>
         `;
         return;
@@ -255,30 +295,38 @@ function renderColumns() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">📊</div>
-                <p class="empty-text">No columns yet. Create one to start managing tasks!</p>
+                <p class="empty-text">ستونی وجود ندارد. یکی ایجاد کنید!</p>
             </div>
         `;
         return;
     }
 
-    // Sort columns by position
     const sortedColumns = [...appState.columns].sort((a, b) => a.position - b.position);
 
     sortedColumns.forEach(column => {
         const columnElement = createColumnElement(column);
         container.appendChild(columnElement);
     });
+
+    initializeDragListeners();
 }
 
 /**
- * Create column DOM element
+ * ایجاد عنصر ستون
  */
 function createColumnElement(column) {
     const columnDiv = document.createElement('div');
     columnDiv.className = 'column';
     columnDiv.dataset.columnId = column.id;
 
-    const tasks = appState.tasks[column.id] || [];
+    const tasks = (appState.tasks[column.id] || []).filter(task => {
+        // اعمال فیلتر
+        if (appState.filters.priority && task.priority !== appState.filters.priority) return false;
+        if (appState.filters.assignee && task.assignee !== appState.filters.assignee) return false;
+        if (appState.filters.overdue && !isOverdue(task.dueDate)) return false;
+        return true;
+    });
+
     const tasksHtml = tasks.map(task => createTaskElement(task)).join('');
 
     columnDiv.innerHTML = `
@@ -288,23 +336,15 @@ function createColumnElement(column) {
                 <span class="column-count">${tasks.length}</span>
             </div>
             <div class="column-actions">
-                <button class="btn-icon-only" title="Add task" onclick="openAddTaskModal(${column.id})">
-                    ➕
-                </button>
-                <button class="btn-icon-only" title="Edit column" onclick="editColumn(${column.id})">
-                    ✏️
-                </button>
-                <button class="btn-icon-only" title="Delete column" onclick="deleteColumn(${column.id})">
-                    🗑️
-                </button>
+                <button class="btn-icon-only" title="افزودن تسک" onclick="openAddTaskModal(${column.id})">➕</button>
+                <button class="btn-icon-only" title="حذف ستون" onclick="deleteColumn(${column.id})">🗑️</button>
             </div>
         </div>
         <div class="tasks-list" data-column-id="${column.id}">
-            ${tasksHtml || '<div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 12px;">No tasks yet</div>'}
+            ${tasksHtml || '<div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 12px;">هنوز تسکی نیست</div>'}
         </div>
     `;
 
-    // Setup drag and drop
     const tasksList = columnDiv.querySelector('.tasks-list');
     setupDropZone(tasksList);
 
@@ -312,41 +352,55 @@ function createColumnElement(column) {
 }
 
 /**
- * Create task card DOM element
+ * ایجاد عنصر تسک
  */
 function createTaskElement(task) {
     const dueDateStr = task.dueDate ? formatDate(task.dueDate) : null;
+    const isOverdueTask = task.dueDate && isOverdue(task.dueDate);
 
     return `
         <div class="task-card" draggable="true" data-task-id="${task.id}">
             <div class="task-card-header">
                 <div class="task-title">${escapeHtml(task.title)}</div>
-                <span class="task-priority priority-${task.priority}">${task.priority}</span>
+                <span class="task-priority priority-${task.priority}">${getPriorityLabel(task.priority)}</span>
             </div>
             ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+            ${task.assignee ? `<div class="task-assignee">👤 ${escapeHtml(task.assignee)}</div>` : ''}
             <div class="task-meta">
-                <div class="task-due-date">
+                <div class="task-due-date ${isOverdueTask ? 'overdue' : ''}">
                     ${dueDateStr ? `📅 ${dueDateStr}` : ''}
                 </div>
-                <div class="task-actions">
-                    <button class="task-btn" title="Edit task" onclick="openEditTaskModal(${task.id})">
-                        ✏️
-                    </button>
-                    <button class="task-btn" title="Delete task" onclick="deleteTask(${task.id})">
-                        🗑️
-                    </button>
+                <div class="task-estimate">
+                    ${task.estimate ? `⏱️ ${task.estimate}س` : ''}
                 </div>
+            </div>
+            <div class="task-actions">
+                <button class="task-btn" title="ویرایش" onclick="openEditTaskModal(${task.id})">✏️</button>
+                <button class="task-btn" title="حذف" onclick="deleteTask(${task.id})">🗑️</button>
             </div>
         </div>
     `;
 }
 
 /**
- * Create new column
+ * ترجمه اولویت
+ */
+function getPriorityLabel(priority) {
+    const labels = {
+        'Low': 'کم',
+        'Medium': 'متوسط',
+        'High': 'بالا',
+        'Critical': 'بسیار'
+    };
+    return labels[priority] || priority;
+}
+
+/**
+ * ایجاد ستون جدید
  */
 async function createColumn() {
     if (!appState.selectedBoardId) {
-        showNotification('Please select a board first', 'error');
+        showNotification('لطفاً ابتدا یک تخته انتخاب کنید', 'error');
         return;
     }
 
@@ -354,7 +408,7 @@ async function createColumn() {
     const position = parseInt(document.getElementById('columnPosition').value) || 0;
 
     if (!title) {
-        showNotification('Please enter a column title', 'error');
+        showNotification('لطفاً نام ستون را وارد کنید', 'error');
         return;
     }
 
@@ -368,68 +422,64 @@ async function createColumn() {
             }),
         });
 
-        showNotification('Column created successfully!', 'success');
+        showNotification('ستون جدید با موفقیت ایجاد شد! ✅', 'success');
         closeModal('addColumnModal');
-        clearForm('addColumnModal');
+        clearForm('columnTitle');
         await loadColumns();
     } catch (error) {
-        console.error('Failed to create column:', error);
+        console.error('خطا در ایجاد ستون:', error);
     }
 }
 
 /**
- * Edit column (placeholder)
- */
-function editColumn(columnId) {
-    showNotification('Column editing coming soon!', 'error');
-}
-
-/**
- * Delete column
+ * حذف ستون
  */
 async function deleteColumn(columnId) {
-    if (!confirm('Are you sure you want to delete this column and all its tasks?')) {
+    if (!confirm('آیا مطمئن هستید؟ این عمل برگشت‌ناپذیر است!')) {
         return;
     }
 
     try {
         await fetchAPI(`/columns/${columnId}`, { method: 'DELETE' });
-        showNotification('Column deleted successfully!', 'success');
+        showNotification('ستون با موفقیت حذف شد! ✅', 'success');
         await loadColumns();
     } catch (error) {
-        console.error('Failed to delete column:', error);
+        console.error('خطا در حذف ستون:', error);
     }
 }
 
 // ========================================
-// Task Management
+// مدیریت تسک‌ها
 // ========================================
 
 /**
- * Open add task modal
+ * باز کردن موادال افزودن تسک
  */
 function openAddTaskModal(columnId) {
     appState.currentColumnForTask = columnId;
     clearForm('addTaskModal');
+    document.getElementById('taskPriority').value = 'Medium';
     openModal('addTaskModal');
 }
 
 /**
- * Create new task
+ * ایجاد تسک جدید
  */
 async function createTask() {
     const title = document.getElementById('taskTitle').value.trim();
     const description = document.getElementById('taskDescription').value.trim();
     const priority = document.getElementById('taskPriority').value;
+    const assignee = document.getElementById('taskAssignee').value.trim();
     const dueDate = document.getElementById('taskDueDate').value;
+    const estimate = parseFloat(document.getElementById('taskEstimate').value) || 0;
 
     if (!title) {
-        showNotification('Please enter a task title', 'error');
+        showNotification('لطفاً عنوان تسک را وارد کنید', 'error');
         return;
     }
 
     if (!appState.currentColumnForTask) {
-        showNotification('No column selected', 'error');
+        showNotification('ستونی انتخاب نشده است', 'error');
         return;
     }
 
@@ -442,21 +492,23 @@ async function createTask() {
                 priority,
                 dueDate: dueDate || null,
                 columnId: appState.currentColumnForTask,
+                assignee,
+                estimate
             }),
         });
 
-        showNotification('Task created successfully!', 'success');
+        showNotification('تسک جدید با موفقیت ایجاد شد! ✅', 'success');
         closeModal('addTaskModal');
-        clearForm('addTaskModal');
         await loadAllTasks();
         renderColumns();
+        updateStats();
     } catch (error) {
-        console.error('Failed to create task:', error);
+        console.error('خطا در ایجاد تسک:', error);
     }
 }
 
 /**
- * Open edit task modal
+ * باز کردن موادال ویرایش تسک
  */
 function openEditTaskModal(taskId) {
     const task = findTaskById(taskId);
@@ -468,12 +520,14 @@ function openEditTaskModal(taskId) {
     document.getElementById('editTaskDescription').value = task.description || '';
     document.getElementById('editTaskPriority').value = task.priority;
     document.getElementById('editTaskDueDate').value = task.dueDate ? task.dueDate.split('T')[0] : '';
+    document.getElementById('editTaskAssignee').value = task.assignee || '';
+    document.getElementById('editTaskEstimate').value = task.estimate || 0;
 
     openModal('editTaskModal');
 }
 
 /**
- * Update task
+ * به‌روزرسانی تسک
  */
 async function updateTask() {
     const taskId = appState.currentTaskId;
@@ -484,9 +538,11 @@ async function updateTask() {
     const description = document.getElementById('editTaskDescription').value.trim();
     const priority = document.getElementById('editTaskPriority').value;
     const dueDate = document.getElementById('editTaskDueDate').value;
+    const assignee = document.getElementById('editTaskAssignee').value.trim();
+    const estimate = parseFloat(document.getElementById('editTaskEstimate').value) || 0;
 
     if (!title) {
-        showNotification('Please enter a task title', 'error');
+        showNotification('لطفاً عنوان تسک را وارد کنید', 'error');
         return;
     }
 
@@ -499,39 +555,43 @@ async function updateTask() {
                 priority,
                 dueDate: dueDate || null,
                 columnId: task.columnId,
+                assignee,
+                estimate
             }),
         });
 
-        showNotification('Task updated successfully!', 'success');
+        showNotification('تسک با موفقیت به‌روزرسانی شد! ✅', 'success');
         closeModal('editTaskModal');
         await loadAllTasks();
         renderColumns();
+        updateStats();
     } catch (error) {
-        console.error('Failed to update task:', error);
+        console.error('خطا در به‌روزرسانی تسک:', error);
     }
 }
 
 /**
- * Delete task
+ * حذف تسک
  */
 async function deleteTask(taskId) {
-    if (!confirm('Are you sure you want to delete this task?')) {
+    if (!confirm('آیا مطمئن هستید؟')) {
         return;
     }
 
     try {
         await fetchAPI(`/taskcards/${taskId}`, { method: 'DELETE' });
-        showNotification('Task deleted successfully!', 'success');
+        showNotification('تسک با موفقیت حذف شد! ✅', 'success');
         closeModal('editTaskModal');
         await loadAllTasks();
         renderColumns();
+        updateStats();
     } catch (error) {
-        console.error('Failed to delete task:', error);
+        console.error('خطا در حذف تسک:', error);
     }
 }
 
 /**
- * Find task by ID
+ * جستجو تسک توسط ID
  */
 function findTaskById(taskId) {
     for (const columnId in appState.tasks) {
@@ -542,14 +602,14 @@ function findTaskById(taskId) {
 }
 
 // ========================================
-// Drag and Drop Implementation
+// Drag & Drop
 // ========================================
 
 let draggedTaskId = null;
 let draggedTaskColumnId = null;
 
 /**
- * Setup drop zone for tasks list
+ * تنظیم Drop Zone
  */
 function setupDropZone(tasksList) {
     tasksList.addEventListener('dragover', handleDragOver);
@@ -558,7 +618,7 @@ function setupDropZone(tasksList) {
 }
 
 /**
- * Initialize drag listeners for task cards
+ * تهیه Drag Listeners
  */
 function initializeDragListeners() {
     document.querySelectorAll('.task-card').forEach(card => {
@@ -568,7 +628,7 @@ function initializeDragListeners() {
 }
 
 /**
- * Handle drag start
+ * شروع Drag
  */
 function handleDragStart(e) {
     draggedTaskId = parseInt(e.target.closest('.task-card').dataset.taskId);
@@ -578,7 +638,7 @@ function handleDragStart(e) {
 }
 
 /**
- * Handle drag end
+ * پایان Drag
  */
 function handleDragEnd(e) {
     e.target.closest('.task-card')?.classList.remove('dragging');
@@ -588,7 +648,7 @@ function handleDragEnd(e) {
 }
 
 /**
- * Handle drag over
+ * پروازی روی Drag
  */
 function handleDragOver(e) {
     e.preventDefault();
@@ -600,7 +660,7 @@ function handleDragOver(e) {
 }
 
 /**
- * Handle drag leave
+ * ترک Drag
  */
 function handleDragLeave(e) {
     if (!e.target.closest('.tasks-list')?.contains(e.relatedTarget)) {
@@ -609,7 +669,7 @@ function handleDragLeave(e) {
 }
 
 /**
- * Handle drop
+ * افت (Drop)
  */
 async function handleDrop(e) {
     e.preventDefault();
@@ -625,7 +685,6 @@ async function handleDrop(e) {
     const task = findTaskById(draggedTaskId);
     if (!task) return;
 
-    // Only update if moving to a different column
     if (targetColumnId !== draggedTaskColumnId) {
         try {
             await fetchAPI(`/taskcards/${draggedTaskId}`, {
@@ -636,14 +695,17 @@ async function handleDrop(e) {
                     priority: task.priority,
                     dueDate: task.dueDate,
                     columnId: targetColumnId,
+                    assignee: task.assignee,
+                    estimate: task.estimate
                 }),
             });
 
-            showNotification('Task moved successfully!', 'success');
+            showNotification('تسک با موفقیت منتقل شد! ✅', 'success');
             await loadAllTasks();
             renderColumns();
+            updateStats();
         } catch (error) {
-            console.error('Failed to move task:', error);
+            console.error('خطا در منتقل کردن تسک:', error);
         }
     }
 
@@ -652,44 +714,131 @@ async function handleDrop(e) {
 }
 
 // ========================================
-// HTML Escaping for Security
+// آمار و نمودار
 // ========================================
 
 /**
- * Escape HTML to prevent XSS
+ * به‌روزرسانی آمار
  */
-function escapeHtml(text) {
-    if (!text) return '';
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;',
+function updateStats() {
+    const allTasks = Object.values(appState.tasks).flat();
+
+    const totalTasks = allTasks.length;
+    const inProgressCount = allTasks.filter(t => t.columnId === appState.selectedBoardId).length;
+    const completedCount = allTasks.filter(t => t.columnId).length;
+    const highPriorityCount = allTasks.filter(t => t.priority === 'High' || t.priority === 'Critical').length;
+
+    document.getElementById('totalTasksCount').textContent = totalTasks;
+    document.getElementById('inProgressCount').textContent = inProgressCount;
+    document.getElementById('completedCount').textContent = completedCount;
+    document.getElementById('highPriorityCount').textContent = highPriorityCount;
+
+    // آمار موادال
+    document.getElementById('statsTotalTasks').textContent = totalTasks;
+    document.getElementById('statsInProgress').textContent = inProgressCount;
+    document.getElementById('statsCompleted').textContent = completedCount;
+    document.getElementById('statsHighPriority').textContent = highPriorityCount;
+
+    // توزیع اولویت
+    const lowCount = allTasks.filter(t => t.priority === 'Low').length;
+    const mediumCount = allTasks.filter(t => t.priority === 'Medium').length;
+    const highCount = allTasks.filter(t => t.priority === 'High').length;
+    const criticalCount = allTasks.filter(t => t.priority === 'Critical').length;
+
+    const totalForPercentage = lowCount + mediumCount + highCount + criticalCount;
+    if (totalForPercentage > 0) {
+        document.getElementById('priorityLow').style.width = `${(lowCount / totalForPercentage) * 100}%`;
+        document.getElementById('priorityMedium').style.width = `${(mediumCount / totalForPercentage) * 100}%`;
+        document.getElementById('priorityHigh').style.width = `${(highCount / totalForPercentage) * 100}%`;
+        document.getElementById('priorityCritical').style.width = `${(criticalCount / totalForPercentage) * 100}%`;
+    }
+}
+
+/**
+ * اعمال فیلتر
+ */
+function applyFilters() {
+    appState.filters.priority = document.getElementById('filterPriority').value;
+    appState.filters.assignee = document.getElementById('filterAssignee').value;
+    appState.filters.status = document.getElementById('filterStatus').value;
+    appState.filters.overdue = document.getElementById('filterOverdue').checked;
+
+    renderColumns();
+    closeModal('filterModal');
+    showNotification('فیلتر‌ها اعمال شد! ✅', 'success');
+}
+
+/**
+ * بازنشانی فیلتر
+ */
+function resetFilters() {
+    appState.filters = {
+        priority: '',
+        assignee: '',
+        status: '',
+        overdue: false
     };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    document.getElementById('filterPriority').value = '';
+    document.getElementById('filterAssignee').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterOverdue').checked = false;
+    renderColumns();
+    showNotification('فیلتر‌ها بازنشانی شدند! ✅', 'success');
 }
 
 // ========================================
-// Event Listeners Setup
+// تنظیمات
+// ========================================
+
+/**
+ * ذخیره تنظیمات
+ */
+function saveSettings() {
+    appState.settings.theme = document.getElementById('themeSelect').value;
+    appState.settings.showCompleted = document.getElementById('showCompleted').checked;
+    appState.settings.autoRefresh = document.getElementById('autoRefresh').checked;
+
+    localStorage.setItem('theme', appState.settings.theme);
+    localStorage.setItem('showCompleted', appState.settings.showCompleted);
+    localStorage.setItem('autoRefresh', appState.settings.autoRefresh);
+
+    applyTheme();
+    showNotification('تنظیمات ذخیره شدند! ✅', 'success');
+    closeModal('settingsModal');
+}
+
+/**
+ * اعمال تم
+ */
+function applyTheme() {
+    const theme = appState.settings.theme;
+    if (theme === 'light') {
+        document.body.style.filter = 'invert(0.95)';
+    } else {
+        document.body.style.filter = 'none';
+    }
+}
+
+// ========================================
+// Event Listeners
 // ========================================
 
 function setupEventListeners() {
-    // Board buttons
+    // دکمه‌های Board
     document.getElementById('addBoardBtn').addEventListener('click', () => openModal('addBoardModal'));
     document.getElementById('createBoardBtn').addEventListener('click', createBoard);
 
-    // Column buttons
+    // دکمه‌های Column
     document.getElementById('addColumnBtn').addEventListener('click', () => {
         if (!appState.selectedBoardId) {
-            showNotification('Please select a board first', 'error');
+            showNotification('لطفاً ابتدا یک تخته انتخاب کنید', 'error');
             return;
         }
         openModal('addColumnModal');
     });
     document.getElementById('createColumnBtn').addEventListener('click', createColumn);
 
-    // Task buttons
+    // دکمه‌های Task
     document.getElementById('createTaskBtn').addEventListener('click', createTask);
     document.getElementById('updateTaskBtn').addEventListener('click', updateTask);
     document.getElementById('deleteTaskBtn').addEventListener('click', () => {
@@ -698,7 +847,24 @@ function setupEventListeners() {
         }
     });
 
-    // Modal close buttons
+    // دکمه‌های تنظیمات و آمار
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        document.getElementById('themeSelect').value = appState.settings.theme;
+        document.getElementById('showCompleted').checked = appState.settings.showCompleted;
+        document.getElementById('autoRefresh').checked = appState.settings.autoRefresh;
+        openModal('settingsModal');
+    });
+
+    document.getElementById('statsBtn').addEventListener('click', () => {
+        updateStats();
+        openModal('statsModal');
+    });
+
+    document.getElementById('filterBtn').addEventListener('click', () => openModal('filterModal'));
+    document.getElementById('applyFilterBtn').addEventListener('click', applyFilters);
+    document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
+
+    // بستن موادال
     document.querySelectorAll('.modal-close').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const modalId = e.target.dataset.modal;
@@ -706,7 +872,7 @@ function setupEventListeners() {
         });
     });
 
-    // Modal close on background click
+    // بستن موادال با کلیک پس‌زمینه
     Object.values(modals).forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -715,8 +881,8 @@ function setupEventListeners() {
         });
     });
 
-    // Modal cancel buttons
-    document.querySelectorAll('.btn-secondary').forEach(btn => {
+    // دکمه‌های Cancel
+    document.querySelectorAll('.modal-footer .btn-secondary').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const modal = e.target.closest('.modal');
             if (modal) {
@@ -724,26 +890,46 @@ function setupEventListeners() {
             }
         });
     });
+
+    // جستجو در تخته‌ها
+    const boardSearchInput = document.getElementById('boardSearchInput');
+    boardSearchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll('.board-item').forEach(item => {
+            const title = item.querySelector('.board-item-title').textContent.toLowerCase();
+            item.style.display = title.includes(query) ? 'block' : 'none';
+        });
+    });
 }
 
 // ========================================
-// Initialize Application
+// Initialization
 // ========================================
 
 async function initializeApp() {
-    console.log('Initializing Scrum Board Application...');
+    console.log('🚀 برنامه تخته‌ی اسکراب در حال شروع...');
     await loadBoards();
     setupEventListeners();
+    applyTheme();
+
+    // Auto-refresh اگر فعال باشد
+    if (appState.settings.autoRefresh) {
+        setInterval(() => {
+            if (appState.selectedBoardId) {
+                loadColumns();
+            }
+        }, 30000); // هر ۳۰ ثانیه
+    }
 }
 
-// Start the application when DOM is ready
+// شروع برنامه
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
     initializeApp();
 }
 
-// Re-initialize drag listeners after rendering
+// مراقب تغییرات DOMبرای Drag & Drop
 const observer = new MutationObserver(() => {
     initializeDragListeners();
 });

@@ -53,6 +53,8 @@ public class TaskCardsController : ControllerBase
             Description = request.Description,
             Priority = request.Priority,
             DueDate = request.DueDate,
+            Assignee = request.Assignee,
+            Estimate = request.Estimate,
             ColumnId = request.ColumnId,
             Column = null!
         };
@@ -90,6 +92,8 @@ public class TaskCardsController : ControllerBase
         taskCard.Description = request.Description;
         taskCard.Priority = request.Priority;
         taskCard.DueDate = request.DueDate;
+        taskCard.Assignee = request.Assignee;
+        taskCard.Estimate = request.Estimate;
         taskCard.ColumnId = request.ColumnId;
 
         _context.TaskCards.Update(taskCard);
@@ -127,6 +131,8 @@ public class CreateTaskCardRequest
     public string? Description { get; set; }
     public required string Priority { get; set; }
     public DateTime? DueDate { get; set; }
+    public string? Assignee { get; set; }
+    public decimal Estimate { get; set; }
     public int ColumnId { get; set; }
 }
 
@@ -139,5 +145,7 @@ public class UpdateTaskCardRequest
     public string? Description { get; set; }
     public required string Priority { get; set; }
     public DateTime? DueDate { get; set; }
+    public string? Assignee { get; set; }
+    public decimal Estimate { get; set; }
     public int ColumnId { get; set; }
 }

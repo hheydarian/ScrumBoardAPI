@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scrum Board - Project Management Dashboard</title>
+    <title>تخته‌ی اسکراب - مدیریت پروژه‌ها</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,16 +11,28 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1 class="app-title">📋 Scrum Board</h1>
-                <p class="app-subtitle">Manage your projects</p>
+                <h1 class="app-title">📋 تخته‌ی اسکراب</h1>
+                <p class="app-subtitle">مدیریت پروژه‌های شما</p>
             </div>
 
-            <button class="btn btn-primary btn-add-board" id="addBoardBtn">
-                <span class="btn-icon">+</span> New Board
-            </button>
+            <!-- Top Buttons -->
+            <div class="sidebar-top-buttons">
+                <button class="btn btn-primary btn-add-board" id="addBoardBtn" title="افزودن تخته جدید">
+                    <span class="btn-icon">+</span> تخته جدید
+                </button>
+                <button class="btn btn-outline" id="settingsBtn" title="تنظیمات">
+                    <span class="btn-icon">⚙️</span>
+                </button>
+                <button class="btn btn-outline" id="statsBtn" title="آمار">
+                    <span class="btn-icon">📊</span>
+                </button>
+            </div>
 
             <div class="boards-list">
-                <h3 class="section-title">Your Boards</h3>
+                <h3 class="section-title">تخته‌های شما</h3>
+                <div class="search-box">
+                    <input type="text" id="boardSearchInput" placeholder="جستجو در تخته‌ها..." class="search-input">
+                </div>
                 <div class="boards-container" id="boardsList">
                     <div class="loading-spinner">
                         <div class="spinner-dot"></div>
@@ -29,7 +41,8 @@
             </div>
 
             <div class="sidebar-footer">
-                <p class="footer-text">💡 Drag tasks between columns to reorganize</p>
+                <p class="footer-text">💡 تسک‌ها را بین ستون‌ها بکشید تا دوباره ترتیب دهید</p>
+                <p class="version-text">نسخه ۱.۰</p>
             </div>
         </aside>
 
@@ -38,13 +51,39 @@
             <!-- Header -->
             <div class="content-header">
                 <div class="header-info">
-                    <h2 id="selectedBoardName" class="board-title">Select a Board</h2>
+                    <h2 id="selectedBoardName" class="board-title">انتخاب یک تخته</h2>
                     <p id="selectedBoardDesc" class="board-description"></p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-secondary btn-add-column" id="addColumnBtn">
-                        <span class="btn-icon">+</span> Add Column
+                    <button class="btn btn-secondary btn-add-column" id="addColumnBtn" title="افزودن ستون">
+                        <span class="btn-icon">+</span> افزودن ستون
                     </button>
+                    <button class="btn btn-outline" id="filterBtn" title="فیلتر">
+                        <span class="btn-icon">🔍</span>
+                    </button>
+                    <button class="btn btn-outline" id="viewBtn" title="نوع نمایش">
+                        <span class="btn-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <span class="stat-label">کل تسک‌ها:</span>
+                    <span class="stat-value" id="totalTasksCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">درحال انجام:</span>
+                    <span class="stat-value" id="inProgressCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">تکمیل‌شده:</span>
+                    <span class="stat-value" id="completedCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">اولویت بالا:</span>
+                    <span class="stat-value" id="highPriorityCount">0</span>
                 </div>
             </div>
 
@@ -52,7 +91,7 @@
             <div class="columns-container" id="columnsContainer">
                 <div class="empty-state">
                     <div class="empty-icon">📌</div>
-                    <p class="empty-text">Select a board to get started</p>
+                    <p class="empty-text">یک تخته انتخاب کنید تا شروع کنید</p>
                 </div>
             </div>
         </main>
@@ -63,22 +102,22 @@
     <div class="modal" id="addBoardModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Create New Board</h3>
+                <h3>ایجاد تخته جدید</h3>
                 <button class="modal-close" data-modal="addBoardModal">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="boardTitle">Board Title</label>
-                    <input type="text" id="boardTitle" placeholder="Enter board title..." required>
+                    <label for="boardTitle">نام تخته</label>
+                    <input type="text" id="boardTitle" placeholder="نام تخته را وارد کنید..." required>
                 </div>
                 <div class="form-group">
-                    <label for="boardDescription">Description</label>
-                    <textarea id="boardDescription" placeholder="Enter board description..." rows="3"></textarea>
+                    <label for="boardDescription">توضیح</label>
+                    <textarea id="boardDescription" placeholder="توضیح تخته را وارد کنید..." rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-modal="addBoardModal">Cancel</button>
-                <button class="btn btn-primary" id="createBoardBtn">Create Board</button>
+                <button class="btn btn-secondary" data-modal="addBoardModal">لغو</button>
+                <button class="btn btn-primary" id="createBoardBtn">ایجاد تخته</button>
             </div>
         </div>
     </div>
@@ -87,22 +126,22 @@
     <div class="modal" id="addColumnModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Create New Column</h3>
+                <h3>ایجاد ستون جدید</h3>
                 <button class="modal-close" data-modal="addColumnModal">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="columnTitle">Column Title</label>
-                    <input type="text" id="columnTitle" placeholder="e.g., To Do, In Progress, Done..." required>
+                    <label for="columnTitle">نام ستون</label>
+                    <input type="text" id="columnTitle" placeholder="مثلاً: انجام می‌شود، درحال انجام، تکمیل‌شده..." required>
                 </div>
                 <div class="form-group">
-                    <label for="columnPosition">Position</label>
+                    <label for="columnPosition">موقعیت</label>
                     <input type="number" id="columnPosition" placeholder="0" min="0" value="0">
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-modal="addColumnModal">Cancel</button>
-                <button class="btn btn-primary" id="createColumnBtn">Create Column</button>
+                <button class="btn btn-secondary" data-modal="addColumnModal">لغو</button>
+                <button class="btn btn-primary" id="createColumnBtn">ایجاد ستون</button>
             </div>
         </div>
     </div>
@@ -111,35 +150,43 @@
     <div class="modal" id="addTaskModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Create New Task</h3>
+                <h3>ایجاد تسک جدید</h3>
                 <button class="modal-close" data-modal="addTaskModal">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="taskTitle">Task Title</label>
-                    <input type="text" id="taskTitle" placeholder="Enter task title..." required>
+                    <label for="taskTitle">عنوان تسک</label>
+                    <input type="text" id="taskTitle" placeholder="عنوان تسک را وارد کنید..." required>
                 </div>
                 <div class="form-group">
-                    <label for="taskDescription">Description</label>
-                    <textarea id="taskDescription" placeholder="Enter task description..." rows="3"></textarea>
+                    <label for="taskDescription">توضیح</label>
+                    <textarea id="taskDescription" placeholder="توضیح تسک را وارد کنید..." rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="taskPriority">Priority</label>
+                    <label for="taskPriority">اولویت</label>
                     <select id="taskPriority" required>
-                        <option value="Low">Low</option>
-                        <option value="Medium" selected>Medium</option>
-                        <option value="High">High</option>
-                        <option value="Critical">Critical</option>
+                        <option value="Low">کم</option>
+                        <option value="Medium" selected>متوسط</option>
+                        <option value="High">بالا</option>
+                        <option value="Critical">بسیار بالا</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="taskDueDate">Due Date</label>
+                    <label for="taskAssignee">مسئول</label>
+                    <input type="text" id="taskAssignee" placeholder="نام مسئول را وارد کنید...">
+                </div>
+                <div class="form-group">
+                    <label for="taskDueDate">تاریخ سررسید</label>
                     <input type="date" id="taskDueDate">
+                </div>
+                <div class="form-group">
+                    <label for="taskEstimate">برآورد ساعت</label>
+                    <input type="number" id="taskEstimate" placeholder="0" min="0" step="0.5">
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-modal="addTaskModal">Cancel</button>
-                <button class="btn btn-primary" id="createTaskBtn">Create Task</button>
+                <button class="btn btn-secondary" data-modal="addTaskModal">لغو</button>
+                <button class="btn btn-primary" id="createTaskBtn">ایجاد تسک</button>
             </div>
         </div>
     </div>
@@ -148,36 +195,200 @@
     <div class="modal" id="editTaskModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Edit Task</h3>
+                <h3>ویرایش تسک</h3>
                 <button class="modal-close" data-modal="editTaskModal">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="editTaskTitle">Task Title</label>
-                    <input type="text" id="editTaskTitle" placeholder="Enter task title..." required>
+                    <label for="editTaskTitle">عنوان تسک</label>
+                    <input type="text" id="editTaskTitle" placeholder="عنوان تسک را وارد کنید..." required>
                 </div>
                 <div class="form-group">
-                    <label for="editTaskDescription">Description</label>
-                    <textarea id="editTaskDescription" placeholder="Enter task description..." rows="3"></textarea>
+                    <label for="editTaskDescription">توضیح</label>
+                    <textarea id="editTaskDescription" placeholder="توضیح تسک را وارد کنید..." rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="editTaskPriority">Priority</label>
+                    <label for="editTaskPriority">اولویت</label>
                     <select id="editTaskPriority" required>
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Critical">Critical</option>
+                        <option value="Low">کم</option>
+                        <option value="Medium">متوسط</option>
+                        <option value="High">بالا</option>
+                        <option value="Critical">بسیار بالا</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="editTaskDueDate">Due Date</label>
+                    <label for="editTaskAssignee">مسئول</label>
+                    <input type="text" id="editTaskAssignee" placeholder="نام مسئول را وارد کنید...">
+                </div>
+                <div class="form-group">
+                    <label for="editTaskDueDate">تاریخ سررسید</label>
                     <input type="date" id="editTaskDueDate">
+                </div>
+                <div class="form-group">
+                    <label for="editTaskEstimate">برآورد ساعت</label>
+                    <input type="number" id="editTaskEstimate" placeholder="0" min="0" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label for="editTaskStatus">وضعیت</label>
+                    <select id="editTaskStatus">
+                        <option value="pending">در انتظار</option>
+                        <option value="progress">درحال انجام</option>
+                        <option value="review">بررسی</option>
+                        <option value="completed">تکمیل‌شده</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-danger" id="deleteTaskBtn">Delete Task</button>
-                <button class="btn btn-secondary" data-modal="editTaskModal">Cancel</button>
-                <button class="btn btn-primary" id="updateTaskBtn">Update Task</button>
+                <button class="btn btn-danger" id="deleteTaskBtn">حذف تسک</button>
+                <button class="btn btn-secondary" data-modal="editTaskModal">لغو</button>
+                <button class="btn btn-primary" id="updateTaskBtn">به‌روزرسانی تسک</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تنظیمات</h3>
+                <button class="modal-close" data-modal="settingsModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4>تظهر</h4>
+                    <div class="form-group">
+                        <label for="themeSelect">تم</label>
+                        <select id="themeSelect">
+                            <option value="dark">تاریک</option>
+                            <option value="light">روشن</option>
+                            <option value="auto">خودکار</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h4>تنظیمات تخته</h4>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="showCompleted" checked>
+                            نمایش تسک‌های تکمیل‌شده
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="autoRefresh" checked>
+                            به‌روزرسانی خودکار
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h4>اطلاعات</h4>
+                    <p>تخته‌ی اسکراب v۱.۰</p>
+                    <p>یک ابزار مدیریت پروژه فارسی</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="settingsModal">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>آمار و نمودار</h3>
+                <button class="modal-close" data-modal="statsModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📋</div>
+                        <div class="stat-info">
+                            <div class="stat-title">کل تسک‌ها</div>
+                            <div class="stat-number" id="statsTotalTasks">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-info">
+                            <div class="stat-title">درحال انجام</div>
+                            <div class="stat-number" id="statsInProgress">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <div class="stat-title">تکمیل‌شده</div>
+                            <div class="stat-number" id="statsCompleted">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔴</div>
+                        <div class="stat-info">
+                            <div class="stat-title">مورد نظر</div>
+                            <div class="stat-number" id="statsHighPriority">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="priority-breakdown">
+                    <h4>توزیع اولویت</h4>
+                    <div class="priority-bar">
+                        <div class="priority-segment" id="priorityLow" title="کم"></div>
+                        <div class="priority-segment" id="priorityMedium" title="متوسط"></div>
+                        <div class="priority-segment" id="priorityHigh" title="بالا"></div>
+                        <div class="priority-segment" id="priorityCritical" title="بسیار بالا"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="statsModal">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div class="modal" id="filterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>فیلتر تسک‌ها</h3>
+                <button class="modal-close" data-modal="filterModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="filterPriority">اولویت</label>
+                    <select id="filterPriority">
+                        <option value="">همه</option>
+                        <option value="Low">کم</option>
+                        <option value="Medium">متوسط</option>
+                        <option value="High">بالا</option>
+                        <option value="Critical">بسیار بالا</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterAssignee">مسئول</label>
+                    <input type="text" id="filterAssignee" placeholder="جستجو در مسئولان...">
+                </div>
+                <div class="form-group">
+                    <label for="filterStatus">وضعیت</label>
+                    <select id="filterStatus">
+                        <option value="">همه</option>
+                        <option value="pending">در انتظار</option>
+                        <option value="progress">درحال انجام</option>
+                        <option value="review">بررسی</option>
+                        <option value="completed">تکمیل‌شده</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="filterOverdue">
+                        تنها تسک‌های سررسید گذشته
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="resetFilterBtn">بازنشانی</button>
+                <button class="btn btn-secondary" data-modal="filterModal">لغو</button>
+                <button class="btn btn-primary" id="applyFilterBtn">اعمال فیلتر</button>
             </div>
         </div>
     </div>
