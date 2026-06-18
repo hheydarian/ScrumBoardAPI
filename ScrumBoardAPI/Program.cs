@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ScrumBoardAPI.Data;
+
 namespace ScrumBoardAPI
 {
     public class Program
@@ -9,24 +10,41 @@ namespace ScrumBoardAPI
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+
+            // فعال‌سازی ردیاب و سازنده داکیومنت سواگر
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
+            // Enable CORS to allow any origin, header, and method
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
+            // اتصال به دیتابیس
             builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // تنظیم خط لوله درخواست‌ها برای محیط دولوپر
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwagger();
+                app.UseSwaggerUI(); // این همان خطی است که ظاهر گرافیکی را می‌سازد
             }
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            app.UseCors("AllowAll");
 
+            app.UseAuthorization();
 
             app.MapControllers();
 

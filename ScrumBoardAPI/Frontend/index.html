@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrum Board - Project Management Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">📋 Scrum Board</h1>
+                <p class="app-subtitle">Manage your projects</p>
+            </div>
+
+            <button class="btn btn-primary btn-add-board" id="addBoardBtn">
+                <span class="btn-icon">+</span> New Board
+            </button>
+
+            <div class="boards-list">
+                <h3 class="section-title">Your Boards</h3>
+                <div class="boards-container" id="boardsList">
+                    <div class="loading-spinner">
+                        <div class="spinner-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <p class="footer-text">💡 Drag tasks between columns to reorganize</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="content-header">
+                <div class="header-info">
+                    <h2 id="selectedBoardName" class="board-title">Select a Board</h2>
+                    <p id="selectedBoardDesc" class="board-description"></p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-add-column" id="addColumnBtn">
+                        <span class="btn-icon">+</span> Add Column
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columns & Tasks Area -->
+            <div class="columns-container" id="columnsContainer">
+                <div class="empty-state">
+                    <div class="empty-icon">📌</div>
+                    <p class="empty-text">Select a board to get started</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Board Modal -->
+    <div class="modal" id="addBoardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Board</h3>
+                <button class="modal-close" data-modal="addBoardModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="boardTitle">Board Title</label>
+                    <input type="text" id="boardTitle" placeholder="Enter board title..." required>
+                </div>
+                <div class="form-group">
+                    <label for="boardDescription">Description</label>
+                    <textarea id="boardDescription" placeholder="Enter board description..." rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="addBoardModal">Cancel</button>
+                <button class="btn btn-primary" id="createBoardBtn">Create Board</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Column Modal -->
+    <div class="modal" id="addColumnModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Column</h3>
+                <button class="modal-close" data-modal="addColumnModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="columnTitle">Column Title</label>
+                    <input type="text" id="columnTitle" placeholder="e.g., To Do, In Progress, Done..." required>
+                </div>
+                <div class="form-group">
+                    <label for="columnPosition">Position</label>
+                    <input type="number" id="columnPosition" placeholder="0" min="0" value="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="addColumnModal">Cancel</button>
+                <button class="btn btn-primary" id="createColumnBtn">Create Column</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div class="modal" id="addTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Task</h3>
+                <button class="modal-close" data-modal="addTaskModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="taskTitle">Task Title</label>
+                    <input type="text" id="taskTitle" placeholder="Enter task title..." required>
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">Description</label>
+                    <textarea id="taskDescription" placeholder="Enter task description..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="taskPriority">Priority</label>
+                    <select id="taskPriority" required>
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="taskDueDate">Due Date</label>
+                    <input type="date" id="taskDueDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-modal="addTaskModal">Cancel</button>
+                <button class="btn btn-primary" id="createTaskBtn">Create Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal" id="editTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Task</h3>
+                <button class="modal-close" data-modal="editTaskModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editTaskTitle">Task Title</label>
+                    <input type="text" id="editTaskTitle" placeholder="Enter task title..." required>
+                </div>
+                <div class="form-group">
+                    <label for="editTaskDescription">Description</label>
+                    <textarea id="editTaskDescription" placeholder="Enter task description..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editTaskPriority">Priority</label>
+                    <select id="editTaskPriority" required>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editTaskDueDate">Due Date</label>
+                    <input type="date" id="editTaskDueDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="deleteTaskBtn">Delete Task</button>
+                <button class="btn btn-secondary" data-modal="editTaskModal">Cancel</button>
+                <button class="btn btn-primary" id="updateTaskBtn">Update Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification" id="notification">
+        <p id="notificationText"></p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
