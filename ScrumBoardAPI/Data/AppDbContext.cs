@@ -73,6 +73,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(50);
 
             entity.Property(t => t.DueDate);
+            entity.Property(t => t.Estimate).HasColumnType("decimal(18,2)");
         });
     }
 }

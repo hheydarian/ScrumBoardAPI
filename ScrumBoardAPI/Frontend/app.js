@@ -160,6 +160,30 @@ function escapeHtml(text) {
 // ========================================
 
 /**
+ * حذف تخته
+ */
+async function deleteBoard(boardId) {
+    if (!confirm('آیا مطمئن هستید؟ این عمل برگشت‌ناپذیر است!')) {
+        return;
+    }
+    try {
+        await fetchAPI(`/boards/${boardId}`, { method: 'DELETE' });
+        showNotification('تخته با موفقیت حذف شد! ✅', 'success');
+        // اگر حذف شد، اگر همان تخته انتخاب شده بود، selection را پاک کنیم
+        if (appState.selectedBoardId === boardId) {
+            appState.selectedBoardId = null;
+            document.getElementById('selectedBoardName').textContent = 'انتخاب یک تخته';
+            document.getElementById('selectedBoardDesc').textContent = '';
+            document.getElementById('columnsContainer').innerHTML = '';
+            updateStats();
+        }
+        await loadBoards();
+    } catch (error) {
+        console.error('خطا در حذف تخته:', error);
+    }
+}
+
+/**
  * بارگیری تمام تخته‌ها
  */
 async function loadBoards() {
@@ -187,9 +211,13 @@ function renderBoardsList() {
         const boardElement = document.createElement('div');
         boardElement.className = `board-item ${board.id === appState.selectedBoardId ? 'active' : ''}`;
         boardElement.innerHTML = `
-            <div class="board-item-title">${escapeHtml(board.title)}</div>
-            <div class="board-item-desc">${board.description ? escapeHtml(board.description) : 'بدون توضیح'}</div>
-        `;
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+                <div class="board-item-info">
+                    <div class="board-item-title">${escapeHtml(board.title)}</div>
+                    <div class="board-item-desc">${board.description ? escapeHtml(board.description) : 'بدون توضیح'}</div>
+                </div>
+                <button class="btn btn-outline" title="حذف تخته" onclick="event.stopPropagation(); deleteBoard(${board.id})" style="margin-left:8px;">🗑️</button>
+            </div>`;
         boardElement.addEventListener('click', () => selectBoard(board.id));
         container.appendChild(boardElement);
     });

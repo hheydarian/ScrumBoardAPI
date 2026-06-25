@@ -19,5 +19,5 @@ public class TaskCard
     public int ColumnId { get; set; }
 
     // Navigation property
-    public required Column Column { get; set; }
+    public Column? Column { get; set; }
 }
