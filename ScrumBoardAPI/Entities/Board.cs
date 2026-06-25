@@ -13,4 +13,3 @@ public class Board
     // Navigation property
     public ICollection<Column> Columns { get; set; } = [];
 }
-
